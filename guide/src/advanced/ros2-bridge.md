@@ -1095,9 +1095,18 @@ if (server->matches(event)) {
 See `examples/ros2-bridge/c++/{turtle,service-server,action-client,action-server}/`.
 
 On native Zenoh (`init_ros2_context_with_transport` with `ZenohHumble` or
-`ZenohRep2016`), C++ topics and services work; actions still require DDS.
+`ZenohRep2016`), C++ topics, services and actions work.
 A Zenoh service request that gets no response within 30 s arrives as an
-error from `downcast`.
+error from `downcast`. Action differences from DDS:
+
+- `send_result` returns once the result is stored, instead of waiting for the
+  client's `request_result`; later requests get the stored result.
+- A client's `cancel_goal` moves the goal to `Canceling` in the status
+  stream. The C++ server gets no event for it (neither does it on DDS), so
+  the goal runs until the server calls `send_result`.
+- A goal the server doesn't finish within 300 s is aborted; its result is
+  `Aborted` with default values. `request_result` for a goal the server
+  doesn't know returns `Unknown` with default values, as rclcpp does.
 
 ### Discovery & RMW notes (native servers)
 
